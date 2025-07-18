@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+[ -f "$PGDATA/postmaster.pid" ] && pg_ctl stop

@@ -1,0 +1,11 @@
+# Backend
+/backend/target
+/backend/.envrc
+/backend/.direnv
+/backend/.cargo
+
+# DB
+/db/.envrc
+/db/.direnv
+/db/.dbdata
+/db/logfile
