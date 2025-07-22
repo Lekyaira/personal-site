@@ -11,6 +11,13 @@
 /db/logfile
 
 # Frontend
+/frontend/.envrc
+/frontend/.direnv
+/frontend/node_modules
+/frontend/dist
+/frontend/dist-ssr
+/frontend/*.local
+
 # Logs
 /frontend/logs
 /frontend/*.log
@@ -19,11 +26,6 @@
 /frontend/yarn-error.log*
 /frontend/pnpm-debug.log*
 /frontend/lerna-debug.log*
-
-/frontend/node_modules
-/frontend/dist
-/frontend/dist-ssr
-/frontend/*.local
 
 # Editor directories and files
 /frontend/.vscode/*
