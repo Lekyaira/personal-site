@@ -19,12 +19,12 @@
 /frontend/yarn-error.log*
 /frontend/pnpm-debug.log*
 /frontend/lerna-debug.log*
-/frontend/
+
 /frontend/node_modules
 /frontend/dist
 /frontend/dist-ssr
 /frontend/*.local
-/frontend/
+
 # Editor directories and files
 /frontend/.vscode/*
 /frontend/!.vscode/extensions.json
