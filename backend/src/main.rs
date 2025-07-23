@@ -1,6 +1,12 @@
-use rocket::{get, routes, serde::json::Json};
+use rocket::{get, serde::json::Json};
 use rocket_db_pools::{Connection, Database};
+use rocket_okapi::{
+    okapi::{schemars, schemars::JsonSchema},
+    openapi, openapi_get_routes,
+    swagger_ui::{SwaggerUIConfig, make_swagger_ui},
+};
 use serde::Serialize;
+
 #[macro_use]
 extern crate rocket;
 
@@ -12,13 +18,14 @@ use rocket_db_pools::sqlx::{self, Row};
 #[database("blog")]
 struct BlogDB(rocket_db_pools::sqlx::PgPool);
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 struct Test {
     id: i32,
     title: String,
     body: String,
 }
 
+#[openapi]
 #[get("/test")]
 async fn list_test_entries(mut db: Connection<BlogDB>) -> Json<Vec<Test>> {
     let rows = sqlx::query("SELECT id, title, body FROM test")
@@ -38,9 +45,18 @@ async fn list_test_entries(mut db: Connection<BlogDB>) -> Json<Vec<Test>> {
     Json(entries)
 }
 
+fn ui() -> SwaggerUIConfig {
+    SwaggerUIConfig {
+        url: "/openapi.json".into(),
+        ..Default::default()
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .attach(BlogDB::init())
-        .mount("/", routes![list_test_entries])
+        .mount("/", openapi_get_routes![list_test_entries])
+        .mount("/docs", make_swagger_ui(&ui()))
+    // .mount("/", routes![list_test_entries])
 }

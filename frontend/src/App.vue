@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+	import HelloWorld from './components/HelloWorld.vue';
+	import TestEntries from '@/components/TestEntries.vue';
 </script>
 
 <template>
@@ -12,6 +13,15 @@ import HelloWorld from './components/HelloWorld.vue'
     </a>
   </div>
   <HelloWorld msg="Vite + Vue" />
+<Suspense>
+  <!-- component with nested async dependencies -->
+  <TestEntries />
+
+  <!-- loading state via #fallback slot -->
+  <template #fallback>
+    Loading...
+  </template>
+</Suspense>
 </template>
 
 <style scoped>
