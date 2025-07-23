@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@hey-api/openapi-ts": "^0.79.2",
+    "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
     "pinia": "^3.0.3",
+    "tailwindcss": "^4.1.11",
     "vue": "^3.5.17"
   },
   "devDependencies": {
