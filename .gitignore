@@ -3,6 +3,7 @@
 /backend/.envrc
 /backend/.direnv
 /backend/.cargo
+/backend/.env
 
 # DB
 /db/.envrc

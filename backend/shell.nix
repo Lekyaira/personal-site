@@ -32,9 +32,6 @@ pkgs.mkShell {
   # Libraries
   # LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.openssl pkgs.sqlite ];
 
-	# Rocket Database Connection
-	ROCKET_DATABASES = "{blog={url=\"postgres://%2Fnas%2Fprojects%2Fweb%2Fpersonal%2Dsite%2Fdb/blog\",idle_timeout=120}}";
-
   shellHook = ''
 #### Cargo ####
 # Make sure our Cargo directories exist.

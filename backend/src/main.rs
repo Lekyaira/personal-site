@@ -1,3 +1,4 @@
+use figment::{Figment, providers::Env};
 use rocket::{get, serde::json::Json};
 use rocket_db_pools::{Connection, Database};
 use rocket_okapi::{
@@ -5,7 +6,7 @@ use rocket_okapi::{
     openapi, openapi_get_routes,
     swagger_ui::{SwaggerUIConfig, make_swagger_ui},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[macro_use]
 extern crate rocket;
@@ -13,6 +14,13 @@ extern crate rocket;
 // Make sqlx available at crate root for derive macros
 extern crate rocket_db_pools;
 use rocket_db_pools::sqlx::{self, Row};
+
+// Server configuration
+#[derive(Clone, PartialEq, Deserialize)]
+struct ServerConfig {
+    host: String,
+    secret: String,
+}
 
 #[derive(Database)]
 #[database("blog")]
@@ -54,9 +62,26 @@ fn ui() -> SwaggerUIConfig {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
+    // Import config
+    dotenvy::dotenv().ok(); // Set env vars from .env file
+    let config: ServerConfig = Figment::new().merge(Env::raw()).extract().unwrap();
+
+    // Insert database url into Rocket
+    let rocket_config = rocket::Config::figment().merge((
+        "databases.blog",
+        rocket_db_pools::Config {
+            url: config.host.into(),
+            min_connections: None,
+            max_connections: 1024,
+            connect_timeout: 3,
+            idle_timeout: None,
+            extensions: None,
+        },
+    ));
+
+    // Built server routes
+    rocket::custom(rocket_config)
         .attach(BlogDB::init())
         .mount("/", openapi_get_routes![list_test_entries])
         .mount("/docs", make_swagger_ui(&ui()))
-    // .mount("/", routes![list_test_entries])
 }

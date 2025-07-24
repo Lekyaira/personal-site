@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+argon2 = "0.5.3"
+dotenvy = "0.15.7"
+figment = { version = "0.10.19", features = ["env", "toml"] }
+jsonwebtoken = "9.3.1"
 rocket = { version = "0.5.1", features = ["json"] }
 rocket_db_pools = { version = "0.2.0", features = ["sqlx_postgres", "sqlx_macros"] }
 rocket_okapi = { version = "0.9.0", features = ["rocket_db_pools", "swagger"] }
