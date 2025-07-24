@@ -1,4 +1,3 @@
-use figment::{Figment, providers::Env};
 use rocket::{get, serde::json::Json};
 use rocket_db_pools::{Connection, Database};
 use rocket_okapi::{
@@ -6,7 +5,7 @@ use rocket_okapi::{
     openapi, openapi_get_routes,
     swagger_ui::{SwaggerUIConfig, make_swagger_ui},
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 #[macro_use]
 extern crate rocket;
@@ -15,12 +14,9 @@ extern crate rocket;
 extern crate rocket_db_pools;
 use rocket_db_pools::sqlx::{self, Row};
 
-// Server configuration
-#[derive(Clone, PartialEq, Deserialize)]
-struct ServerConfig {
-    host: String,
-    secret: String,
-}
+mod config;
+use config::config;
+mod auth;
 
 #[derive(Database)]
 #[database("blog")]
@@ -62,15 +58,12 @@ fn ui() -> SwaggerUIConfig {
 
 #[launch]
 fn rocket() -> _ {
-    // Import config
-    dotenvy::dotenv().ok(); // Set env vars from .env file
-    let config: ServerConfig = Figment::new().merge(Env::raw()).extract().unwrap();
-
     // Insert database url into Rocket
+    // TODO: Pull the rest of the Rocket config values from server config
     let rocket_config = rocket::Config::figment().merge((
         "databases.blog",
         rocket_db_pools::Config {
-            url: config.host.into(),
+            url: config().host.into(),
             min_connections: None,
             max_connections: 1024,
             connect_timeout: 3,
