@@ -23,6 +23,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
 		jq
 		sqlx-cli
+		openssl
   ];
 
   # Cargo

@@ -17,10 +17,8 @@ use rocket_db_pools::sqlx::{self, Row};
 mod config;
 use config::config;
 mod auth;
-
-#[derive(Database)]
-#[database("blog")]
-struct BlogDB(rocket_db_pools::sqlx::PgPool);
+mod db;
+use db::BlogDB;
 
 #[derive(Debug, Serialize, JsonSchema)]
 struct Test {
@@ -75,6 +73,6 @@ fn rocket() -> _ {
     // Built server routes
     rocket::custom(rocket_config)
         .attach(BlogDB::init())
-        .mount("/", openapi_get_routes![list_test_entries])
+        .mount("/", openapi_get_routes![list_test_entries, auth::login])
         .mount("/docs", make_swagger_ui(&ui()))
 }

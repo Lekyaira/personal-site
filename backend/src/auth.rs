@@ -1,16 +1,29 @@
 use crate::config::config;
+use crate::db::BlogDB;
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
-    password_hash::{PasswordHasher, SaltString},
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use rand_core::OsRng;
 use rocket::{
     http::Status,
-    outcome::Outcome,
-    request::{self, FromRequest, Request},
+    request::{self, FromRequest, Outcome, Request},
+    serde::json::Json,
+};
+use rocket_db_pools::Connection;
+use rocket_db_pools::sqlx::{self, Row};
+use rocket_okapi::{
+    okapi::{schemars, schemars::JsonSchema},
+    openapi,
 };
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, JsonSchema)]
+pub struct User {
+    pub id: i32,
+    pub username: String,
+    pub password_hash: String, // Don't return this in responses
+}
 
 fn hash_password(password: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
@@ -60,7 +73,7 @@ pub struct AuthUser(pub i32);
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for AuthUser {
-    type Error = ();
+    type Error = Status;
 
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
         let token = req
@@ -70,10 +83,9 @@ impl<'r> FromRequest<'r> for AuthUser {
             .map(str::to_string);
 
         if let Some(token) = token {
-            let secret = config().secret;
             let result = decode::<Claims>(
                 &token,
-                &DecodingKey::from_secret(secret.as_ref()),
+                &DecodingKey::from_secret(config().secret.as_ref()),
                 &Validation::default(),
             );
 
@@ -82,6 +94,38 @@ impl<'r> FromRequest<'r> for AuthUser {
             }
         }
 
-        Outcome::Failure((Status::Unauthorized, ()))
+        Outcome::Error((Status::Unauthorized, Status::Unauthorized))
     }
+}
+
+#[derive(JsonSchema, Deserialize)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[openapi]
+#[post("/login", data = "<req>")]
+pub async fn login(
+    req: Json<LoginRequest>,
+    mut db: Connection<BlogDB>,
+) -> Result<Json<String>, Status> {
+    let row = sqlx::query("SELECT * FROM users WHERE username = $1")
+        .bind(&req.username)
+        .fetch_one(&mut **db)
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let user = User {
+        id: row.get("id"),
+        username: row.get("username"),
+        password_hash: row.get("password"),
+    };
+
+    if verify_password(&user.password_hash, &req.password) {
+        let token = create_jwt(user.id);
+        return Ok(Json(token));
+    }
+
+    Err(Status::Unauthorized)
 }
