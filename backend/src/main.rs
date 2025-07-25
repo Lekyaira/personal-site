@@ -18,7 +18,7 @@ mod config;
 use config::config;
 mod auth;
 mod db;
-use db::BlogDB;
+use db::{BlogDB, UserDB};
 
 #[derive(Debug, Serialize, JsonSchema)]
 struct Test {
@@ -58,21 +58,37 @@ fn ui() -> SwaggerUIConfig {
 fn rocket() -> _ {
     // Insert database url into Rocket
     // TODO: Pull the rest of the Rocket config values from server config
-    let rocket_config = rocket::Config::figment().merge((
-        "databases.blog",
-        rocket_db_pools::Config {
-            url: config().host.into(),
-            min_connections: None,
-            max_connections: 1024,
-            connect_timeout: 3,
-            idle_timeout: None,
-            extensions: None,
-        },
-    ));
+    let rocket_config = rocket::Config::figment()
+        .merge((
+            "databases.blog",
+            rocket_db_pools::Config {
+                url: config().blog.host.into(),
+                min_connections: None,
+                max_connections: 1024,
+                connect_timeout: 3,
+                idle_timeout: None,
+                extensions: None,
+            },
+        ))
+        .merge((
+            "databases.users",
+            rocket_db_pools::Config {
+                url: config().users.host.into(),
+                min_connections: None,
+                max_connections: 1024,
+                connect_timeout: 3,
+                idle_timeout: None,
+                extensions: None,
+            },
+        ));
 
     // Built server routes
     rocket::custom(rocket_config)
         .attach(BlogDB::init())
-        .mount("/", openapi_get_routes![list_test_entries, auth::login])
+        .attach(UserDB::init())
+        .mount(
+            "/",
+            openapi_get_routes![list_test_entries, auth::login, auth::signup],
+        )
         .mount("/docs", make_swagger_ui(&ui()))
 }

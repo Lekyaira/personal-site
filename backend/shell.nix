@@ -17,13 +17,15 @@ pkgs.mkShell {
   # C/C++ libraries go here.
   nativeBuildInputs = with pkgs; [
     rust_toolchain
+	 openssl.dev
   ];
 
   # Other dependencies, cli tools, etc go here.
   buildInputs = with pkgs; [
 		jq
 		sqlx-cli
-		openssl
+		pkg-config
+	 	openssl
   ];
 
   # Cargo
@@ -31,7 +33,7 @@ pkgs.mkShell {
   CARGO_HOME = "${pd}/.cargo";
   CARGO_TARGET_DIR = "${pd}/.cargo/target";
   # Libraries
-  # LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.openssl pkgs.sqlite ];
+  LD_LIBRARY_PATH = with pkgs; pkgs.lib.makeLibraryPath [ openssl ];
 
   shellHook = ''
 #### Cargo ####

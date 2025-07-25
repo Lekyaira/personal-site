@@ -1,5 +1,5 @@
 use crate::config::config;
-use crate::db::BlogDB;
+use crate::db::UserDB;
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
@@ -10,8 +10,7 @@ use rocket::{
     request::{self, FromRequest, Outcome, Request},
     serde::json::Json,
 };
-use rocket_db_pools::Connection;
-use rocket_db_pools::sqlx::{self, Row};
+use rocket_db_pools::{Connection, sqlx::Row};
 use rocket_okapi::{
     okapi::{schemars, schemars::JsonSchema},
     openapi,
@@ -98,6 +97,34 @@ impl<'r> FromRequest<'r> for AuthUser {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "user_role")] // Must match Postgres enum name
+#[sqlx(rename_all = "PascalCase")] // Must match Postgres variant case
+pub enum Roles {
+    Admin,
+    User,
+    Guest,
+}
+
+pub async fn AuthorizeRole(
+    user: AuthUser,
+    access_level: Roles,
+    mut db: Connection<UserDB>,
+) -> Result<(), Status> {
+    let row = sqlx::query("SELECT * FROM users WHERE id = $1")
+        .bind(&user.0)
+        .fetch_one(&mut **db)
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let role: Roles = row.get("role");
+    if role == access_level {
+        return Ok(());
+    }
+
+    Err(Status::Unauthorized)
+}
+
 #[derive(JsonSchema, Deserialize)]
 pub struct LoginRequest {
     pub username: String,
@@ -108,7 +135,7 @@ pub struct LoginRequest {
 #[post("/login", data = "<req>")]
 pub async fn login(
     req: Json<LoginRequest>,
-    mut db: Connection<BlogDB>,
+    mut db: Connection<UserDB>,
 ) -> Result<Json<String>, Status> {
     let row = sqlx::query("SELECT * FROM users WHERE username = $1")
         .bind(&req.username)
@@ -128,4 +155,23 @@ pub async fn login(
     }
 
     Err(Status::Unauthorized)
+}
+
+#[openapi]
+#[post("/signup", data = "<req>")]
+pub async fn signup(req: Json<LoginRequest>, mut db: Connection<UserDB>) -> Result<(), Status> {
+    // Hash the password before adding it to the database
+    let password = hash_password(&req.password);
+
+    // Insert the user into the database
+    sqlx::query("INSERT INTO users (username, password, role) VALUES ($1, $2, $3)")
+        .bind(&req.username)
+        .bind(password)
+        .bind(Roles::Admin)
+        .execute(&mut **db)
+        .await
+        .map_err(|_| Status::InternalServerError)?; // TODO: Parse errors, tell client if user
+    // exists
+
+    Ok(())
 }
