@@ -47,6 +47,12 @@ async fn list_test_entries(mut db: Connection<BlogDB>) -> Json<Vec<Test>> {
     Json(entries)
 }
 
+#[openapi]
+#[get("/test-admin")]
+async fn test_admin(user: auth::AuthUser) -> Json<String> {
+    format!("You are logged in as admin. User id: {}", user.0).into()
+}
+
 fn ui() -> SwaggerUIConfig {
     SwaggerUIConfig {
         url: "/openapi.json".into(),
@@ -82,13 +88,21 @@ fn rocket() -> _ {
             },
         ));
 
+    let routes = openapi_get_routes![
+        list_test_entries,
+        test_admin,
+        auth::login,
+        auth::signup,
+        auth::create_admin
+    ];
+
     // Built server routes
     rocket::custom(rocket_config)
         .attach(BlogDB::init())
         .attach(UserDB::init())
         .mount(
-            "/",
-            openapi_get_routes![list_test_entries, auth::login, auth::signup],
+            "/", // openapi_get_routes![list_test_entries, auth::login, auth::signup],
+            routes,
         )
         .mount("/docs", make_swagger_ui(&ui()))
 }
