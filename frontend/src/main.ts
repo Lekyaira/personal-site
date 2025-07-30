@@ -2,21 +2,20 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import { createPinia } from 'pinia'
-import { client } from '@/api/client.gen';
+import piniaPersist from 'pinia-plugin-persistedstate'
+import { client } from '@/api/client.gen'
+import OpenApiPlugin from '@/lib/openapi'
 
 // Set up OpenAPI bindings
 client.setConfig({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000', // TODO: Set up dev/production configurations
+	baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,        // any Axios option is allowed
   timeout: 10_000,
-});
-
-// Initialize applicaton
-const app = createApp(App)
+})
 
 // Set up data store
 const pinia = createPinia()
-app.use(pinia)
+pinia.use(piniaPersist)
 
 // Mount application
-app.mount('#app')
+createApp(App).use(pinia).use(OpenApiPlugin).mount('#app')

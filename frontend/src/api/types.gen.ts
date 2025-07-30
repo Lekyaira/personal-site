@@ -24,6 +24,19 @@ export type ListTestEntriesResponses = {
 
 export type ListTestEntriesResponse = ListTestEntriesResponses[keyof ListTestEntriesResponses];
 
+export type TestAdminData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/test-admin';
+};
+
+export type TestAdminResponses = {
+    200: string;
+};
+
+export type TestAdminResponse = TestAdminResponses[keyof TestAdminResponses];
+
 export type AuthLoginData = {
     body: LoginRequest;
     path?: never;
@@ -53,6 +66,21 @@ export type AuthSignupErrors = {
 };
 
 export type AuthSignupResponses = {
+    200: unknown;
+};
+
+export type AuthCreateAdminData = {
+    body: LoginRequest;
+    path?: never;
+    query?: never;
+    url: '/create-admin';
+};
+
+export type AuthCreateAdminErrors = {
+    default: unknown;
+};
+
+export type AuthCreateAdminResponses = {
     200: unknown;
 };
 
