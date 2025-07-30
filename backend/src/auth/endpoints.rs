@@ -10,6 +10,29 @@ use rocket::{http::Status, serde::json::Json};
 use rocket_db_pools::{Connection, sqlx::Row};
 use rocket_okapi::openapi;
 
+fn map_db_err(e: sqlx::Error) -> Status {
+    use std::io::ErrorKind;
+
+    match &e {
+        // No matching row for SELECT … FETCH_ONE
+        sqlx::Error::RowNotFound => Status::NotFound,
+
+        // Couldn’t reach the DB / pool timed out
+        sqlx::Error::Io(io) => {
+            if io.kind() == ErrorKind::TimedOut {
+                Status::ServiceUnavailable
+            } else {
+                Status::InternalServerError
+            }
+        }
+        sqlx::Error::PoolTimedOut => Status::ServiceUnavailable,
+        sqlx::Error::PoolClosed => Status::ServiceUnavailable,
+
+        // Anything else
+        _ => Status::InternalServerError,
+    }
+}
+
 #[openapi]
 #[post("/login", data = "<req>")]
 pub async fn login(
@@ -20,7 +43,7 @@ pub async fn login(
         .bind(&req.username)
         .fetch_one(&mut **db)
         .await
-        .map_err(|_| Status::InternalServerError)?;
+        .map_err(map_db_err)?;
 
     let user = User {
         id: row.get("id"),
@@ -29,7 +52,7 @@ pub async fn login(
     };
 
     if verify_password(&user.password_hash, &req.password) {
-        let token = create_jwt(user.id);
+        let token = create_jwt(user.id).map_err(|_| Status::InternalServerError)?;
         return Ok(Json(token));
     }
 
@@ -59,14 +82,14 @@ pub async fn create_admin(
         .bind(id)
         .execute(&mut **db)
         .await
-        .map_err(|_| Status::InternalServerError)?;
+        .map_err(map_db_err)?;
 
     Ok(())
 }
 
 #[openapi]
-#[post("/refresh")]
+#[get("/refresh")]
 pub async fn refresh_token(user: AuthUser) -> Result<Json<String>, Status> {
-    let token = create_jwt(user.0);
+    let token = create_jwt(user.0).map_err(|_| Status::InternalServerError)?;
     Ok(Json(token))
 }
