@@ -1,3 +1,4 @@
+use super::auth_user::AuthUser;
 use super::db::create_user;
 use super::login_request::LoginRequest;
 use super::password::verify_password;
@@ -61,4 +62,11 @@ pub async fn create_admin(
         .map_err(|_| Status::InternalServerError)?;
 
     Ok(())
+}
+
+#[openapi]
+#[post("/refresh")]
+pub async fn refresh_token(user: AuthUser) -> Result<Json<String>, Status> {
+    let token = create_jwt(user.0);
+    Ok(Json(token))
 }
