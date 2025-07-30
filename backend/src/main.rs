@@ -17,6 +17,7 @@ use rocket_db_pools::sqlx::{self, Row};
 mod config;
 use config::config;
 mod auth;
+use auth::AuthUser;
 mod db;
 use db::{BlogDB, UserDB};
 
@@ -49,7 +50,7 @@ async fn list_test_entries(mut db: Connection<BlogDB>) -> Json<Vec<Test>> {
 
 #[openapi]
 #[get("/test-admin")]
-async fn test_admin(user: auth::AuthUser) -> Json<String> {
+async fn test_admin(user: AuthUser) -> Json<String> {
     format!("You are logged in as admin. User id: {}", user.0).into()
 }
 
