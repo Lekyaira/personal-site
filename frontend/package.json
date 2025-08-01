@@ -10,7 +10,6 @@
     "openapi-ts": "openapi-ts"
   },
   "dependencies": {
-    "@ark-ui/vue": "^5.18.2",
     "@hey-api/openapi-ts": "^0.79.2",
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
