@@ -84,6 +84,23 @@ export type AuthCreateAdminResponses = {
     200: unknown;
 };
 
+export type AuthRefreshTokenData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/refresh';
+};
+
+export type AuthRefreshTokenErrors = {
+    default: unknown;
+};
+
+export type AuthRefreshTokenResponses = {
+    200: string;
+};
+
+export type AuthRefreshTokenResponse = AuthRefreshTokenResponses[keyof AuthRefreshTokenResponses];
+
 export type ClientOptions = {
     baseURL: 'http://localhost:8000' | (string & {});
 };

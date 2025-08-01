@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import piniaPersist from 'pinia-plugin-persistedstate'
 import { client } from '@/api/client.gen'
 import OpenApiPlugin from '@/lib/openapi'
+import { router } from '@/router'
 
 // Set up OpenAPI bindings
 client.setConfig({
@@ -18,4 +19,4 @@ const pinia = createPinia()
 pinia.use(piniaPersist)
 
 // Mount application
-createApp(App).use(pinia).use(OpenApiPlugin).mount('#app')
+createApp(App).use(pinia).use(OpenApiPlugin).use(router).mount('#app')
