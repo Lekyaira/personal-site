@@ -89,10 +89,3 @@
 	</header>
 	<!-- End Nav bar -->
 </template>
-
-<style scoped>
-.close-button button {
-	width: 8;
-	height: 8;
-}
-</style>
