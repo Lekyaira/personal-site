@@ -21,33 +21,6 @@ use auth::AuthUser;
 mod db;
 use db::{BlogDB, UserDB};
 
-#[derive(Debug, Serialize, JsonSchema)]
-struct Test {
-    id: i32,
-    title: String,
-    body: String,
-}
-
-#[openapi]
-#[get("/test")]
-async fn list_test_entries(mut db: Connection<BlogDB>) -> Json<Vec<Test>> {
-    let rows = sqlx::query("SELECT id, title, body FROM test")
-        .fetch_all(&mut **db)
-        .await
-        .expect("Failed to fetch test entries");
-
-    let entries: Vec<Test> = rows
-        .into_iter()
-        .map(|row| Test {
-            id: row.get("id"),
-            title: row.get("title"),
-            body: row.get("body"),
-        })
-        .collect();
-
-    Json(entries)
-}
-
 #[openapi]
 #[get("/test-admin")]
 async fn test_admin(user: AuthUser) -> Json<String> {
@@ -90,12 +63,12 @@ fn rocket() -> _ {
         ));
 
     let routes = openapi_get_routes![
-        list_test_entries,
         test_admin,
         auth::login,
+        auth::logout,
         auth::signup,
         auth::create_admin,
-        auth::refresh_token,
+        auth::me,
     ];
 
     // Built server routes

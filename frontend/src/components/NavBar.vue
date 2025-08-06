@@ -1,13 +1,12 @@
 <script setup lang="ts">
 	import { useRouter, useRoute } from 'vue-router'
-	import { useAuthStore } from '@/stores/auth'
+	import { useUserStore } from '@/stores/user'
+	import { login, logout } from '@/lib/auth'
 	import Dialog from '@/components/Dialog.vue'
 	import TextField from '@/components/TextField.vue'
 	import { ref, reactive } from 'vue'
-	import { LoginRequest } from '@/api/types.gen'
-	import { authLogin } from '@/api/sdk.gen'
 
-	const auth = useAuthStore()
+	const userStore = useUserStore()
 	const route = useRoute()
 	const router = useRouter()
 
@@ -15,6 +14,7 @@
 	const login_form = reactive({
 		username: '',
 		password: '',
+		stay_logged_in: false,
 	})
 
 	interface NavItem {
@@ -26,14 +26,12 @@
 	]
 	const authorized_menu = ref<NavItem[]>([...guest_menu])
 
-	async function login() {
-		//let { data: token } = await authLogin({ body: {username: login_form.username, password: login_form.password }})
-		//console.log('Token: ', token)
-		let err = await auth.login(login_form.username, login_form.password)
+	async function login_submit() {
+		let error = await login(login_form.username, login_form.password, login_form.stay_logged_in)
 		// Whether we succeeded or failed, empty the password field
 		login_form.password = ''
-		if(err) { 
-			console.log('Error: ', err) 
+		if(error) { 
+			console.log('Error: ', error) 
 			return
 		}
 
@@ -47,8 +45,9 @@
 		router.push("/")
 	}
 
-	async function logout() {
-		await auth.logout()
+	async function logout_submit() {
+		await logout()
+		// Save login state
 		authorized_menu.value = [...guest_menu]
 		// Move the user to the home page
 		router.push("/")
@@ -62,8 +61,12 @@
 			<div class="p-2 m-1">
 				<TextField v-model="login_form.username" placeholder="Email Address" :required="true"/>
 				<TextField v-model="login_form.password" placeholder="Password" :required="true" :password="true"/>
+				<div class="flex flex-row gap-1">
+					<span>Stay logged in?</span>
+					<input type="checkbox" v-model="login_form.stay_logged_in"/>
+				</div>
 			</div>
-			<button @click="login">Log In</button>
+			<button @click="login_submit">Log In</button>
 		</Dialog>
 	<!-- End Log in dialog -->
 	<!-- Nav bar -->
@@ -82,8 +85,8 @@
 				</div>
 				<!-- End Nav links -->
 				<!-- Log in button -->
-				<button v-if="!auth.isAuthenticated" @click="() => (login_open = true)">Log In</button>
-				<button v-if="auth.isAuthenticated" @click="logout">Log Out</button>
+				<button v-if="!userStore.isAuthenticated" @click="() => (login_open = true)">Log In</button>
+				<button v-if="userStore.isAuthenticated" @click="logout_submit">Log Out</button>
 			</nav>
 		</div>
 	</header>

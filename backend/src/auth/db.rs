@@ -6,6 +6,13 @@ use crate::db::UserDB;
 use rocket::{http::Status, serde::json::Json};
 use rocket_db_pools::{Connection, sqlx::Row};
 
+/// Returns `Ok` if the authorized user matches the given `Role` or better
+/// # Arguments
+/// - `user`: `auth::AuthUser` - Rocket guard
+/// - `access_level`: `auth::Roles` - Role to match against
+/// - `mut db`: `Connection<UserDB>` - Rocket Sqlx_pools DB
+/// # Returns
+/// - `Result<(), Status>`
 pub async fn authorize_role(
     user: AuthUser,
     access_level: Roles,

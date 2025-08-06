@@ -1,4 +1,5 @@
 use super::claims::Claims;
+use super::token::get_claims;
 use crate::config::config;
 use jsonwebtoken::{DecodingKey, Validation, decode};
 use rocket::{
@@ -16,8 +17,8 @@ use rocket_okapi::{
 /// # Example
 /// ```rust
 /// // Protected Rocket endpoint
-/// #[get("/me")]
-/// async fn me(user: AuthUser) -> Json<i32> {
+/// #[get("/protected")]
+/// async fn protected(user: AuthUser) -> Json<i32> {
 ///     Json(user.0) // user id
 /// }
 /// ```
@@ -28,23 +29,15 @@ impl<'r> FromRequest<'r> for AuthUser {
     type Error = Status;
 
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        let token = req
-            .headers()
-            .get_one("Authorization")
-            .and_then(|h| h.strip_prefix("Bearer "))
-            .map(str::to_string);
-
-        if let Some(token) = token {
-            let result = decode::<Claims>(
-                &token,
-                &DecodingKey::from_secret(config().secret.as_ref()),
-                &Validation::default(),
-            );
-
-            if let Ok(data) = result {
-                return Outcome::Success(AuthUser(data.claims.sub));
+        if let Some(token) = req.cookies().get("token").map(|c| c.value().to_string()) {
+            if let Ok(claims) = get_claims(token) {
+                if claims.exp >= chrono::Utc::now() {
+                    return Outcome::Success(AuthUser(claims.sub));
+                }
             }
         }
+        // TODO: Authorize user role or greater; create AuthAdmin guard for admin role
+        // authorization
 
         Outcome::Error((Status::Unauthorized, Status::Unauthorized))
     }
