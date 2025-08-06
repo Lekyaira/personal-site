@@ -3,12 +3,17 @@ use super::db::create_user;
 use super::login_request::LoginRequest;
 use super::password::verify_password;
 use super::roles::Roles;
-use super::token::create_jwt;
+use super::token::{create_jwt, get_claims};
 use super::user::User;
+use super::cookie::Expires;
 use crate::db::UserDB;
-use rocket::{http::Status, serde::json::Json};
+use rocket::{
+    http::{Cookie, CookieJar, SameSite, Status},
+    serde::json::Json,
+};
 use rocket_db_pools::{Connection, sqlx::Row};
 use rocket_okapi::openapi;
+use chrono::{Utc, Duration};
 
 fn map_db_err(e: sqlx::Error) -> Status {
     use std::io::ErrorKind;
@@ -37,26 +42,49 @@ fn map_db_err(e: sqlx::Error) -> Status {
 #[post("/login", data = "<req>")]
 pub async fn login(
     req: Json<LoginRequest>,
+    jar: &CookieJar<'_>,
     mut db: Connection<UserDB>,
-) -> Result<Json<String>, Status> {
-    let row = sqlx::query("SELECT * FROM users WHERE username = $1")
+) -> Result<Json<User>, Status> {
+    let row = sqlx::query("SELECT username, role, id, password FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(&mut **db)
         .await
         .map_err(map_db_err)?;
 
     let user = User {
-        id: row.get("id"),
         username: row.get("username"),
-        password_hash: row.get("password"),
+        role: row.get("role"),
     };
+    let id = row.get("id");
+    let password_hash = row.get("password");
 
-    if verify_password(&user.password_hash, &req.password) {
-        let token = create_jwt(user.id).map_err(|_| Status::InternalServerError)?;
-        return Ok(Json(token));
+    if verify_password(password_hash, &req.password) {
+        let expiration = Utc::now() + Duration::weeks(1);
+        let token = create_jwt(id, expiration).map_err(|_| Status::InternalServerError)?;
+        // Save the token as a cookie
+        // Set as HttpOnly, Secure, SameSite <- Security features, change with caution!
+        let mut cookie = Cookie::new("token", token);
+        cookie.set_http_only(true);
+        cookie.set_secure(true);
+        cookie.set_same_site(SameSite::Strict);
+        cookie.set_path("/");
+        if req.stay_logged_in {
+            cookie.set_expires(Expires::set(expiration).map_err(|_| Status::InternalServerError)?);
+        } else {
+            cookie.set_expires(None); // Expires with session
+        }
+        jar.add(cookie);
+        return Ok(Json(user));
     }
 
     Err(Status::Unauthorized)
+}
+
+#[openapi]
+#[get("/logout")]
+pub async fn logout(jar: &CookieJar<'_>) -> Result<Json<String>, Status> {
+    jar.remove("token");
+    Ok(Json("ok".into()))
 }
 
 #[openapi]
@@ -88,8 +116,49 @@ pub async fn create_admin(
 }
 
 #[openapi]
-#[get("/refresh")]
-pub async fn refresh_token(user: AuthUser) -> Result<Json<String>, Status> {
-    let token = create_jwt(user.0).map_err(|_| Status::InternalServerError)?;
-    Ok(Json(token))
+#[get("/me")]
+pub async fn me(
+    jar: &CookieJar<'_>,
+    mut db: Connection<UserDB>,
+) -> Result<Json<User>, Status> {
+    // Get the user token from the cookie, if it exists
+    let (token, expires) = if let Some(c) = jar.get("token") {
+        (c.value().to_string(), c.expires())
+    } else {
+        return Err(Status::Ok);
+    };
+
+    // Get user id from token
+    let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;
+
+    // Get the user data
+    let row = sqlx::query("SELECT username, role FROM users WHERE id = $1")
+        .bind(claims.sub)
+        .fetch_one(&mut **db)
+        .await
+        .map_err(map_db_err)?;
+
+    let userData = User {
+        username: row.get("username"),
+        role: row.get("role"),
+    };
+
+    // Regenerate the token
+    let expiration = Utc::now() + Duration::weeks(1);
+    let token = create_jwt(claims.sub, expiration).map_err(|_| Status::InternalServerError)?;
+
+    // Save the cookie with the new information
+    let mut cookie = Cookie::new("token", token);
+    cookie.set_http_only(true);
+    cookie.set_secure(true);
+    cookie.set_same_site(SameSite::Strict);
+    cookie.set_path("/");
+    if expires.is_some() {
+        cookie.set_expires(Expires::set(expiration).map_err(|_| Status::InternalServerError)?);
+    } else {
+        cookie.set_expires(None); // Expires with session
+    }
+    jar.add(cookie);
+
+    Ok(Json(userData))
 }

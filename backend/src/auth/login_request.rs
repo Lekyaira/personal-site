@@ -6,4 +6,5 @@ use serde::Deserialize;
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
+    pub stay_logged_in: bool,
 }

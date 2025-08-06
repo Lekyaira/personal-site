@@ -6,6 +6,7 @@ import piniaPersist from 'pinia-plugin-persistedstate'
 import { client } from '@/api/client.gen'
 import OpenApiPlugin from '@/lib/openapi'
 import { router } from '@/router'
+import { useUserStore } from '@/stores/user'
 
 // Set up OpenAPI bindings
 client.setConfig({
@@ -20,3 +21,7 @@ pinia.use(piniaPersist)
 
 // Mount application
 createApp(App).use(pinia).use(OpenApiPlugin).use(router).mount('#app')
+
+// Initialize the user data
+const userStore = useUserStore()
+userStore.refresh()

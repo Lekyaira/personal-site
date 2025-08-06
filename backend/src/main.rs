@@ -93,9 +93,10 @@ fn rocket() -> _ {
         list_test_entries,
         test_admin,
         auth::login,
+        auth::logout,
         auth::signup,
         auth::create_admin,
-        auth::refresh_token,
+        auth::me,
     ];
 
     // Built server routes

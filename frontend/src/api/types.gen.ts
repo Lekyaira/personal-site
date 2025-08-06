@@ -6,9 +6,17 @@ export type Test = {
     body: string;
 };
 
+export type User = {
+    username: string;
+    role: Roles;
+};
+
+export type Roles = 'Admin' | 'User' | 'Guest';
+
 export type LoginRequest = {
     username: string;
     password: string;
+    stay_logged_in: boolean;
 };
 
 export type ListTestEntriesData = {
@@ -49,10 +57,27 @@ export type AuthLoginErrors = {
 };
 
 export type AuthLoginResponses = {
-    200: string;
+    200: User;
 };
 
 export type AuthLoginResponse = AuthLoginResponses[keyof AuthLoginResponses];
+
+export type AuthLogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/logout';
+};
+
+export type AuthLogoutErrors = {
+    default: unknown;
+};
+
+export type AuthLogoutResponses = {
+    200: string;
+};
+
+export type AuthLogoutResponse = AuthLogoutResponses[keyof AuthLogoutResponses];
 
 export type AuthSignupData = {
     body: LoginRequest;
@@ -84,22 +109,22 @@ export type AuthCreateAdminResponses = {
     200: unknown;
 };
 
-export type AuthRefreshTokenData = {
+export type AuthMeData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/refresh';
+    url: '/me';
 };
 
-export type AuthRefreshTokenErrors = {
+export type AuthMeErrors = {
     default: unknown;
 };
 
-export type AuthRefreshTokenResponses = {
-    200: string;
+export type AuthMeResponses = {
+    200: User;
 };
 
-export type AuthRefreshTokenResponse = AuthRefreshTokenResponses[keyof AuthRefreshTokenResponses];
+export type AuthMeResponse = AuthMeResponses[keyof AuthMeResponses];
 
 export type ClientOptions = {
     baseURL: 'http://localhost:8000' | (string & {});
