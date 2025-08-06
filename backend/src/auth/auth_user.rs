@@ -17,8 +17,8 @@ use rocket_okapi::{
 /// # Example
 /// ```rust
 /// // Protected Rocket endpoint
-/// #[get("/me")]
-/// async fn me(user: AuthUser) -> Json<i32> {
+/// #[get("/protected")]
+/// async fn protected(user: AuthUser) -> Json<i32> {
 ///     Json(user.0) // user id
 /// }
 /// ```
@@ -36,6 +36,8 @@ impl<'r> FromRequest<'r> for AuthUser {
                 }
             }
         }
+        // TODO: Authorize user role or greater; create AuthAdmin guard for admin role
+        // authorization
 
         Outcome::Error((Status::Unauthorized, Status::Unauthorized))
     }

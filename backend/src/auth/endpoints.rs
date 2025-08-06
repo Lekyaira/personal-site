@@ -38,6 +38,7 @@ fn map_db_err(e: sqlx::Error) -> Status {
     }
 }
 
+/// Logs in a user given username and password. JWT token saved in browser cookies.
 #[openapi]
 #[post("/login", data = "<req>")]
 pub async fn login(
@@ -80,6 +81,7 @@ pub async fn login(
     Err(Status::Unauthorized)
 }
 
+/// Logs out current user by removing the token cookie
 #[openapi]
 #[get("/logout")]
 pub async fn logout(jar: &CookieJar<'_>) -> Result<Json<String>, Status> {
@@ -87,6 +89,7 @@ pub async fn logout(jar: &CookieJar<'_>) -> Result<Json<String>, Status> {
     Ok(Json("ok".into()))
 }
 
+/// Adds a new user to the database
 #[openapi]
 #[post("/signup", data = "<req>")]
 pub async fn signup(req: Json<LoginRequest>, mut db: Connection<UserDB>) -> Result<(), Status> {
@@ -94,6 +97,8 @@ pub async fn signup(req: Json<LoginRequest>, mut db: Connection<UserDB>) -> Resu
     Ok(())
 }
 
+/// Creates an admin user account. Only compiled with `debug_assertions`. VERIFY NO ENDPOINT IN
+/// RELEASE CODE!!!
 #[openapi]
 #[post("/create-admin", data = "<req>")]
 #[cfg(debug_assertions)]
@@ -115,6 +120,8 @@ pub async fn create_admin(
     Ok(())
 }
 
+/// Refreshes logged in user expiration (if any) and returns `User` data. If token does not exist,
+/// just returns `Status::Ok`.
 #[openapi]
 #[get("/me")]
 pub async fn me(

@@ -8,7 +8,7 @@ export const useUserStore = defineStore('user', {
 
   getters: {
     isAuthenticated: (state) => !!state.user,
-		isAdmin: (state) => true, // TODO: Actually check user role
+		isAdmin: (state) => true, // TODO: Actually check user role - actually, will be handled by Rocket guard
   },
 
   actions: {
