@@ -15,6 +15,7 @@
 # Frontend
 /frontend/.envrc
 /frontend/.direnv
+/frontend/.env*
 /frontend/node_modules
 /frontend/dist
 /frontend/dist-ssr
