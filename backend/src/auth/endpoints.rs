@@ -5,7 +5,7 @@ use super::password::verify_password;
 use super::roles::Roles;
 use super::token::{create_jwt, get_claims};
 use super::user::User;
-use super::cookie::Expires;
+use super::cookie::{Expires, get_user_claims};
 use crate::db::UserDB;
 use rocket::{
     http::{Cookie, CookieJar, SameSite, Status},
@@ -128,15 +128,16 @@ pub async fn me(
     jar: &CookieJar<'_>,
     mut db: Connection<UserDB>,
 ) -> Result<Json<User>, Status> {
-    // Get the user token from the cookie, if it exists
-    let (token, expires) = if let Some(c) = jar.get("token") {
-        (c.value().to_string(), c.expires())
-    } else {
-        return Err(Status::Ok);
-    };
-
-    // Get user id from token
-    let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;
+    // // Get the user token from the cookie, if it exists
+    // let (token, expires) = if let Some(c) = jar.get("token") {
+    //     (c.value().to_string(), c.expires())
+    // } else {
+    //     return Err(Status::Ok);
+    // };
+    //
+    // // Get user id from token
+    // let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;
+    let (claims, expires) = get_user_claims(&jar)?;
 
     // Get the user data
     let row = sqlx::query("SELECT username, role FROM users WHERE id = $1")
@@ -168,4 +169,35 @@ pub async fn me(
     jar.add(cookie);
 
     Ok(Json(userData))
+}
+
+#[openapi]
+#[get("/links")]
+pub async fn links(
+    jar: &CookieJar<'_>,
+    mut db: Connection<UserDB>,
+) -> Result<Json<Vec<super::link::Link>>, Status> {
+    use super::link::Link;
+
+    // Get the user claims. It's fine if the cookie doesn't exist, but not if it's invalid.
+    let rows = match get_user_claims(&jar) {
+        Err(_) => { // Guest
+            sqlx::query("SELECT * FROM get_guest_links()")
+                .fetch_all(&mut **db)
+                .await
+                .map_err(map_db_err)?
+                .into_iter()
+        },
+        Ok(claims) => { // Authenticated user
+            sqlx::query("SELECT * FROM get_user_links($1)")
+                .bind(claims.0.sub)
+                .fetch_all(&mut **db)
+                .await
+                .map_err(map_db_err)?
+                .into_iter()
+        },
+    };
+    let links: Vec<Link> = rows.map(|r| Link { name: r.get("name"), href: r.get("href") }).collect();
+
+    Ok(Json(links))
 }
