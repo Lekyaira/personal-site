@@ -1,30 +1,39 @@
 import { defineStore } from 'pinia'
-import { authLogin, authMe } from '@/api/sdk.gen'
+import { authLogin, authMe, authLinks } from '@/api/sdk.gen'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
     user: null as null | { username: string, role: string }, 
+		links: [{ name: 'Home', to: '/' }],
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.user,
-		isAdmin: (state) => true, // TODO: Actually check user role - actually, will be handled by Rocket guard
   },
 
   actions: {
 		async refresh() {
-			const { data: user_data, error } = await authMe({ withCredentials: true })
-			if(error) { 
+			// Update user data and refresh logged in expiration
+			const { data: user_data, me_error } = await authMe({ withCredentials: true })
+			if(me_error) { 
 				this.user = null
-				return error 
+				return me_error 
 			}
 			this.user = user_data
+			
+			// Update links
+			const { data: user_links, links_error } = await authLinks({ withCredentials: true })
+			if(links_error) {
+				this.links = [{ name: 'Home', to: '/' }]
+				return links_error
+			}
+			this.links = user_links
 		},
   },
 
   // <-- Persistence config
   persist: {
-    key: 'com.andersonryan-auth',
+    key: 'com.andersonryan-user',
     paths: ['user'],  				          // only these fields are saved
     storage: sessionStorage,            // or localStorage / cookies
   },

@@ -8,6 +8,7 @@ mod roles;
 mod token;
 mod user;
 mod cookie;
+mod link;
 
 pub use auth_user::AuthUser;
 pub use db::authorize_role;

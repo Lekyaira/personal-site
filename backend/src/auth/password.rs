@@ -1,3 +1,5 @@
+use rocket::http::Status;
+
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
@@ -13,9 +15,14 @@ pub(super) fn hash_password(password: &str) -> String {
 }
 
 /// Compares a password hash to an unhashed password for verification
-pub(super) fn verify_password(hash: &str, password: &str) -> bool {
+pub(super) fn verify_password(hash: &str, password: &str) -> Result<(), Status> {
     let parsed_hash = PasswordHash::new(hash).unwrap();
-    Argon2::default()
+    if !Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok()
+    {
+        return Err(Status::Unauthorized);
+    }
+
+    Ok(())
 }

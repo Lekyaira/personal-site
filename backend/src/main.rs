@@ -69,6 +69,7 @@ fn rocket() -> _ {
         auth::signup,
         auth::create_admin,
         auth::me,
+        auth::links,
     ];
 
     // Built server routes

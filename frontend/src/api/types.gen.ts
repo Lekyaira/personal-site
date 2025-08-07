@@ -22,6 +22,14 @@ export type LoginRequest = {
     stay_logged_in: boolean;
 };
 
+/**
+ * Represents a navigation link
+ */
+export type Link = {
+    name: string;
+    to: string;
+};
+
 export type TestAdminData = {
     body?: never;
     path?: never;
@@ -115,6 +123,23 @@ export type AuthMeResponses = {
 };
 
 export type AuthMeResponse = AuthMeResponses[keyof AuthMeResponses];
+
+export type AuthLinksData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/links';
+};
+
+export type AuthLinksErrors = {
+    default: unknown;
+};
+
+export type AuthLinksResponses = {
+    200: Array<Link>;
+};
+
+export type AuthLinksResponse = AuthLinksResponses[keyof AuthLinksResponses];
 
 export type ClientOptions = {
     baseURL: 'http://localhost:8000' | (string & {});

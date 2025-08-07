@@ -1,3 +1,9 @@
+use super::claims::Claims;
+use super::token::get_claims;
+use rocket::{
+    http::{Cookie, CookieJar, Status},
+};
+
 /// Helper struct to convert `chrono` Utc time into `time` OffsetDateTime for use in Rocket
 /// Cookie.expires()
 pub(super) struct Expires;
@@ -20,4 +26,14 @@ impl Expires {
     pub fn get(date: time::OffsetDateTime) -> Option<chrono::DateTime<chrono::Utc>> {
         chrono::DateTime::<chrono::Utc>::from_timestamp(date.unix_timestamp(), 0)
     }
+}
+
+pub (super) fn get_user_claims<'a>(jar: &'a CookieJar<'a>) -> Result<(Claims, Option<time::OffsetDateTime>), Status> {
+    // Get the user token from the cookie, if it exists
+    let (token, expires) = jar.get("token").map(|c| (c.value().to_string(), c.expires().and_then(|exp| exp.datetime()))).ok_or(Status::Ok)?;
+
+    // Get user id from token
+    let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;
+
+    Ok((claims, expires))
 }
