@@ -58,27 +58,26 @@ pub async fn login(
     };
     let id = row.get("id");
     let password_hash = row.get("password");
+    verify_password(password_hash, &req.password)?;
 
-    if verify_password(password_hash, &req.password) {
-        let expiration = Utc::now() + Duration::weeks(1);
-        let token = create_jwt(id, expiration).map_err(|_| Status::InternalServerError)?;
-        // Save the token as a cookie
-        // Set as HttpOnly, Secure, SameSite <- Security features, change with caution!
-        let mut cookie = Cookie::new("token", token);
-        cookie.set_http_only(true);
-        cookie.set_secure(true);
-        cookie.set_same_site(SameSite::Strict);
-        cookie.set_path("/");
-        if req.stay_logged_in {
-            cookie.set_expires(Expires::set(expiration).map_err(|_| Status::InternalServerError)?);
-        } else {
-            cookie.set_expires(None); // Expires with session
-        }
-        jar.add(cookie);
-        return Ok(Json(user));
+    // Password ok, continue login
+    let expiration = Utc::now() + Duration::weeks(1);
+    let token = create_jwt(id, expiration).map_err(|_| Status::InternalServerError)?;
+    // Save the token as a cookie
+    // Set as HttpOnly, Secure, SameSite <- Security features, change with caution!
+    let mut cookie = Cookie::new("token", token);
+    cookie.set_http_only(true);
+    cookie.set_secure(true);
+    cookie.set_same_site(SameSite::Strict);
+    cookie.set_path("/");
+    if req.stay_logged_in {
+        cookie.set_expires(Expires::set(expiration).map_err(|_| Status::InternalServerError)?);
+    } else {
+        cookie.set_expires(None); // Expires with session
     }
+    jar.add(cookie);
 
-    Err(Status::Unauthorized)
+    Ok(Json(user))
 }
 
 /// Logs out current user by removing the token cookie
@@ -128,15 +127,7 @@ pub async fn me(
     jar: &CookieJar<'_>,
     mut db: Connection<UserDB>,
 ) -> Result<Json<User>, Status> {
-    // // Get the user token from the cookie, if it exists
-    // let (token, expires) = if let Some(c) = jar.get("token") {
-    //     (c.value().to_string(), c.expires())
-    // } else {
-    //     return Err(Status::Ok);
-    // };
-    //
-    // // Get user id from token
-    // let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;
+    // Get the user token from the cookie, if it exists
     let (claims, expires) = get_user_claims(&jar)?;
 
     // Get the user data
@@ -197,7 +188,7 @@ pub async fn links(
                 .into_iter()
         },
     };
-    let links: Vec<Link> = rows.map(|r| Link { name: r.get("name"), href: r.get("href") }).collect();
+    let links: Vec<Link> = rows.map(|r| Link { name: r.get("name"), to: r.get("href") }).collect();
 
     Ok(Json(links))
 }

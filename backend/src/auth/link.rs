@@ -5,5 +5,5 @@ use serde::Serialize;
 #[derive(Serialize, JsonSchema)]
 pub struct Link {
     pub name: String,
-    pub href: String,
+    pub to: String,
 }

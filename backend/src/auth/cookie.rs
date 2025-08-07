@@ -28,15 +28,9 @@ impl Expires {
     }
 }
 
-// pub(super) fn get_user_claims<'a>(jar: &'a CookieJar<'a>) -> Result<(Claims, Option<Cookie<'a>::Expiration>), Status> {
 pub (super) fn get_user_claims<'a>(jar: &'a CookieJar<'a>) -> Result<(Claims, Option<time::OffsetDateTime>), Status> {
     // Get the user token from the cookie, if it exists
     let (token, expires) = jar.get("token").map(|c| (c.value().to_string(), c.expires().and_then(|exp| exp.datetime()))).ok_or(Status::Ok)?;
-    // let (token, expires) = if let Some(c) = jar.get("token") {
-    //     (c.value().to_string(), c.expires())
-    // } else {
-    //     return Err(Status::Ok);
-    // };
 
     // Get user id from token
     let claims = get_claims(token).map_err(|_| Status::Unauthorized)?;

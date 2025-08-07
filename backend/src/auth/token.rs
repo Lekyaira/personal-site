@@ -1,6 +1,6 @@
 use super::claims::Claims;
 use crate::config::config;
-use jsonwebtoken::{EncodingKey, DecodingKey, Header, encode, decode, errors::Error, Validation};
+use jsonwebtoken::{EncodingKey, DecodingKey, Header, encode, decode, errors::Error, Validation, Algorithm };
 use chrono::{DateTime, Utc};
 
 /// Creates a JWT token
@@ -10,8 +10,9 @@ use chrono::{DateTime, Utc};
 pub(super) fn create_jwt(user_id: i32, expires: DateTime<Utc>) -> Result<String, Error> {
     let claims = Claims {
         sub: user_id,
-        exp: expires,
+        exp: expires.timestamp() as usize,
     };
+    println!("Create jwt: {:?}", claims);
     encode(
         &Header::default(),
         &claims,

@@ -5,6 +5,7 @@
 	import Dialog from '@/components/Dialog.vue'
 	import TextField from '@/components/TextField.vue'
 	import { ref, reactive } from 'vue'
+	import { authLinks } from '@/api/sdk.gen'
 
 	const userStore = useUserStore()
 	const route = useRoute()
@@ -17,15 +18,6 @@
 		stay_logged_in: false,
 	})
 
-	interface NavItem {
-		name: string,
-		to: string,
-	}
-	const guest_menu: NavItem[] = [
-		{ name: 'Home', to: '/' },
-	]
-	const authorized_menu = ref<NavItem[]>([...guest_menu])
-
 	async function login_submit() {
 		let error = await login(login_form.username, login_form.password, login_form.stay_logged_in)
 		// Whether we succeeded or failed, empty the password field
@@ -36,7 +28,7 @@
 		}
 
 		// Pull authoried pages and add them to the nav menu
-		authorized_menu.value.push({ name: 'Admin', to: '/admin' }) // Pull from database based on user role
+		userStore.refresh()
 
 		// Close the login dialog, we're done with it
 		login_open.value = false
@@ -48,7 +40,7 @@
 	async function logout_submit() {
 		await logout()
 		// Save login state
-		authorized_menu.value = [...guest_menu]
+		userStore.refresh()
 		// Move the user to the home page
 		router.push("/")
 	}
@@ -75,7 +67,7 @@
 			<nav class="flex">
 				<!-- Nav links -->
 				<!-- TODO: Move this to a component -->
-				<div v-for="item in authorized_menu" class="mx-1 my-2 px-1 border-2 rounded-md hover:border-teal-300">
+				<div v-for="item in userStore.links" class="mx-1 my-2 px-1 border-2 rounded-md hover:border-teal-300">
 					<RouterLink :key="item.name" :to="item.to" 
 											class="transition-colors hover:text-teal-300" 
 											:class="{ 'text-teal-400 font-semibold': route.path === item.to }"

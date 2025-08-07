@@ -31,7 +31,7 @@ impl<'r> FromRequest<'r> for AuthUser {
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
         if let Some(token) = req.cookies().get("token").map(|c| c.value().to_string()) {
             if let Ok(claims) = get_claims(token) {
-                if claims.exp >= chrono::Utc::now() {
+                if claims.expires() >= chrono::Utc::now() {
                     return Outcome::Success(AuthUser(claims.sub));
                 }
             }
