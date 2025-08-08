@@ -20,12 +20,7 @@ mod auth;
 use auth::AuthUser;
 mod db;
 use db::{BlogDB, UserDB};
-
-#[openapi]
-#[get("/test-admin")]
-async fn test_admin(user: AuthUser) -> Json<String> {
-    format!("You are logged in as admin. User id: {}", user.0).into()
-}
+mod routes;
 
 fn ui() -> SwaggerUIConfig {
     SwaggerUIConfig {
@@ -62,15 +57,15 @@ fn rocket() -> _ {
             },
         ));
 
-    let routes = openapi_get_routes![
-        test_admin,
-        auth::login,
-        auth::logout,
-        auth::signup,
-        auth::create_admin,
-        auth::me,
-        auth::links,
-    ];
+    // let routes = openapi_get_routes![
+    //     test_admin,
+    //     auth::login,
+    //     auth::logout,
+    //     auth::signup,
+    //     auth::create_admin,
+    //     auth::me,
+    //     auth::links,
+    // ];
 
     // Built server routes
     rocket::custom(rocket_config)
@@ -78,7 +73,7 @@ fn rocket() -> _ {
         .attach(UserDB::init())
         .mount(
             "/", // openapi_get_routes![list_test_entries, auth::login, auth::signup],
-            routes,
+            routes::get_routes(),
         )
         .mount("/docs", make_swagger_ui(&ui()))
 }

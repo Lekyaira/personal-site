@@ -11,7 +11,7 @@ use rocket::{
     http::{Cookie, CookieJar, SameSite, Status},
     serde::json::Json,
 };
-use rocket_db_pools::{Connection, sqlx::Row};
+use rocket_db_pools::{Connection, sqlx::{Row, Postgres}};
 use rocket_okapi::openapi;
 use chrono::{Utc, Duration};
 
@@ -191,4 +191,18 @@ pub async fn links(
     let links: Vec<Link> = rows.map(|r| Link { name: r.get("name"), to: r.get("href") }).collect();
 
     Ok(Json(links))
+}
+
+#[openapi]
+#[get("/admin")]
+pub async fn admin(
+    user: AuthUser,
+    mut db: Connection<UserDB>,
+) -> Result<Json<bool>, Status> {
+    let is_admin: bool = sqlx::query_scalar::<Postgres, bool>("SELECT is_admin($1)")
+        .bind(user.0)
+        .fetch_one(&mut **db)
+        .await
+        .map_err(map_db_err)?;
+    Ok(Json(is_admin))
 }
