@@ -57,16 +57,6 @@ fn rocket() -> _ {
             },
         ));
 
-    // let routes = openapi_get_routes![
-    //     test_admin,
-    //     auth::login,
-    //     auth::logout,
-    //     auth::signup,
-    //     auth::create_admin,
-    //     auth::me,
-    //     auth::links,
-    // ];
-
     // Built server routes
     rocket::custom(rocket_config)
         .attach(BlogDB::init())

@@ -46,7 +46,7 @@ pub async fn login(
     jar: &CookieJar<'_>,
     mut db: Connection<UserDB>,
 ) -> Result<Json<User>, Status> {
-    let row = sqlx::query("SELECT username, role, id, password FROM users WHERE username = $1")
+    let row = sqlx::query("SELECT username, id, password, fullname, callby FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(&mut **db)
         .await
@@ -54,7 +54,8 @@ pub async fn login(
 
     let user = User {
         username: row.get("username"),
-        role: row.get("role"),
+        fullname: row.get("fullname"),
+        callby: row.get("callby"),
     };
     let id = row.get("id");
     let password_hash = row.get("password");
@@ -131,7 +132,7 @@ pub async fn me(
     let (claims, expires) = get_user_claims(&jar)?;
 
     // Get the user data
-    let row = sqlx::query("SELECT username, role FROM users WHERE id = $1")
+    let row = sqlx::query("SELECT username, fullname, callby FROM users WHERE id = $1")
         .bind(claims.sub)
         .fetch_one(&mut **db)
         .await
@@ -139,7 +140,8 @@ pub async fn me(
 
     let userData = User {
         username: row.get("username"),
-        role: row.get("role"),
+        fullname: row.get("fullname"),
+        callby: row.get("callby"),
     };
 
     // Regenerate the token
