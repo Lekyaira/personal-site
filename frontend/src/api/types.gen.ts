@@ -5,13 +5,9 @@
  */
 export type User = {
     username: string;
-    role: Roles;
+    callby?: string | null;
+    fullname?: string | null;
 };
-
-/**
- * User roles, used for authenticated access to certain endpoints
- */
-export type Roles = 'Admin' | 'User' | 'Guest';
 
 /**
  * Represents a log in request
@@ -140,6 +136,23 @@ export type AuthLinksResponses = {
 };
 
 export type AuthLinksResponse = AuthLinksResponses[keyof AuthLinksResponses];
+
+export type AuthAdminData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin';
+};
+
+export type AuthAdminErrors = {
+    default: unknown;
+};
+
+export type AuthAdminResponses = {
+    200: boolean;
+};
+
+export type AuthAdminResponse = AuthAdminResponses[keyof AuthAdminResponses];
 
 export type ClientOptions = {
     baseURL: 'http://localhost:8000' | (string & {});
