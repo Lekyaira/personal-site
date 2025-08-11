@@ -11,7 +11,7 @@ use rocket::{
     http::{Cookie, CookieJar, SameSite, Status},
     serde::json::Json,
 };
-use rocket_db_pools::{Connection, sqlx::Row};
+use rocket_db_pools::{Connection, sqlx::{Row, Postgres}};
 use rocket_okapi::openapi;
 use chrono::{Utc, Duration};
 
@@ -46,7 +46,7 @@ pub async fn login(
     jar: &CookieJar<'_>,
     mut db: Connection<UserDB>,
 ) -> Result<Json<User>, Status> {
-    let row = sqlx::query("SELECT username, role, id, password FROM users WHERE username = $1")
+    let row = sqlx::query("SELECT username, id, password, fullname, callby FROM users WHERE username = $1")
         .bind(&req.username)
         .fetch_one(&mut **db)
         .await
@@ -54,7 +54,8 @@ pub async fn login(
 
     let user = User {
         username: row.get("username"),
-        role: row.get("role"),
+        fullname: row.get("fullname"),
+        callby: row.get("callby"),
     };
     let id = row.get("id");
     let password_hash = row.get("password");
@@ -131,7 +132,7 @@ pub async fn me(
     let (claims, expires) = get_user_claims(&jar)?;
 
     // Get the user data
-    let row = sqlx::query("SELECT username, role FROM users WHERE id = $1")
+    let row = sqlx::query("SELECT username, fullname, callby FROM users WHERE id = $1")
         .bind(claims.sub)
         .fetch_one(&mut **db)
         .await
@@ -139,7 +140,8 @@ pub async fn me(
 
     let userData = User {
         username: row.get("username"),
-        role: row.get("role"),
+        fullname: row.get("fullname"),
+        callby: row.get("callby"),
     };
 
     // Regenerate the token
@@ -191,4 +193,18 @@ pub async fn links(
     let links: Vec<Link> = rows.map(|r| Link { name: r.get("name"), to: r.get("href") }).collect();
 
     Ok(Json(links))
+}
+
+#[openapi]
+#[get("/admin")]
+pub async fn admin(
+    user: AuthUser,
+    mut db: Connection<UserDB>,
+) -> Result<Json<bool>, Status> {
+    let is_admin: bool = sqlx::query_scalar::<Postgres, bool>("SELECT is_admin($1)")
+        .bind(user.0)
+        .fetch_one(&mut **db)
+        .await
+        .map_err(map_db_err)?;
+    Ok(Json(is_admin))
 }

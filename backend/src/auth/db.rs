@@ -25,11 +25,9 @@ pub async fn authorize_role(
         .map_err(|_| Status::InternalServerError)?;
 
     let role: Roles = row.get("role");
-    if role == access_level {
-        return Ok(());
-    }
+    role.authorize(access_level)?;
 
-    Err(Status::Unauthorized)
+    Ok(())
 }
 
 pub(super) async fn create_user(
