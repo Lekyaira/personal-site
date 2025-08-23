@@ -8,7 +8,9 @@ use crate::rocket::yansi::Paint;
 #[derive(Clone, PartialEq, Eq, Deserialize)]
 pub struct DBConfig {
     pub host: String,
+    #[serde(default)]
     pub connections: Connections,
+    #[serde(default)]
     pub timeout: Timeouts,
     #[serde(default = "extensions")]
     pub extensions: Option<Vec<String>>,
@@ -23,6 +25,15 @@ pub struct Connections {
     pub max: usize,
 }
 
+impl Default for Connections {
+    fn default() -> Self {
+        Self {
+            min: min_connections(),
+            max: max_connections(),
+        }
+    }
+}
+
 /// Database connection timeout data
 #[derive(Clone, PartialEq, Eq, Deserialize)]
 pub struct Timeouts {
@@ -30,6 +41,15 @@ pub struct Timeouts {
     pub connect: u64,
     #[serde(default = "idle_timeout")]
     pub idle: Option<u64>,
+}
+
+impl Default for Timeouts {
+    fn default() -> Self {
+        Self {
+            connect: connect_timeout(),
+            idle: idle_timeout(),
+        }
+    }
 }
 
 // DBConfig defaults
