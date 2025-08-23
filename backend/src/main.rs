@@ -38,22 +38,22 @@ fn rocket() -> _ {
             "databases.blog",
             rocket_db_pools::Config {
                 url: config().blog.host.into(),
-                min_connections: None,
-                max_connections: 1024,
-                connect_timeout: 3,
-                idle_timeout: None,
-                extensions: None,
+                min_connections: config().blog.connections.min,
+                max_connections: config().blog.connections.max,
+                connect_timeout: config().blog.timeout.connect,
+                idle_timeout: config().blog.timeout.idle,
+                extensions: config().blog.extensions,
             },
         ))
         .merge((
             "databases.users",
             rocket_db_pools::Config {
                 url: config().users.host.into(),
-                min_connections: None,
-                max_connections: 1024,
-                connect_timeout: 3,
-                idle_timeout: None,
-                extensions: None,
+                min_connections: config().users.connections.min,
+                max_connections: config().users.connections.max,
+                connect_timeout: config().users.timeout.connect,
+                idle_timeout: config().users.timeout.idle,
+                extensions: config().users.extensions,
             },
         ));
 
