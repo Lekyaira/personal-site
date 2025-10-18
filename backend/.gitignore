@@ -1,0 +1,6 @@
+# Backend
+/target
+/.envrc
+/.direnv
+/.cargo
+/.env
