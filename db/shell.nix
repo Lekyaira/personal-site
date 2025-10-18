@@ -14,7 +14,6 @@ pkgs.mkShell {
 	PGDATA = ".dbdata";
 	# Edit this to set the Postgres database name
 	BLOGDB = "blog";
-	USERDB = "users";
 
 	shellHook = ''
 		#### Utils ####
@@ -29,7 +28,6 @@ pkgs.mkShell {
 		[ ! -d .dbdata ] && mkdir .dbdata && initdb
 		# Initialize the database if it does not exist
 		pg_ctl -l logfile -o "--unix_socket_directories='$PWD'" start
-		psql -h $PWD -tAl | cut -d '|' -f 1 | grep -qx "$USERDB" || createdb -h "$PWD" "$USERDB"
 		psql -h $PWD -tAl | cut -d '|' -f 1 | grep -qx "$BLOGDB" || createdb -h "$PWD" "$BLOGDB"
 		[ -f "$PGDATA/postmaster.pid" ] && pg_ctl stop
 		
