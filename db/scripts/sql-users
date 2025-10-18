@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-[ -f ".dbdata/postmaster.pid" ] || start
-psql -h "$PWD" -d "$USERDB" $@

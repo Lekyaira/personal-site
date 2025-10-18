@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load colors helper
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source "$SCRIPT_DIR/colors.sh"
+
+DB_NAME="${1:-}"
+ACTION="${2:-run}" # run | revert | info
+
+[[ -z "$DB_NAME" ]] && {
+	cmd="$(basename -- "$0")"
+	warn "Usage: %s <database name> [run | revert | info]" "$cmd"
+	exit 2
+}
+
+ROOT_DIR="$(cd "${PWD}" && pwd)" || exit 1
+encoded=$(jq -rn --arg x "$ROOT_DIR" '$x|@uri|gsub("-";"%2D")')
+DB_URL="postgres://$encoded/$DB_NAME"
+SOURCE_DIR="$ROOT_DIR/migrations/$DB_NAME"
+
+sqlx database create --database-url $DB_URL
+cmd=(sqlx migrate "$ACTION" --source "$SOURCE_DIR" --database-url "$DB_URL")
+[[ $ACTION == "run" ]] && msg "Performing pending migrations for %s..." "$DB_NAME"
+[[ $ACTION == "revert" ]] && msg "Reverting last migration for %s..." "$DB_NAME"
+[[ $ACTION == "info" ]] && msg "Getting info for %s..." "$DB_NAME"
+"${cmd[@]}"

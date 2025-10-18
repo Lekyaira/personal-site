@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load colors helper
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source "$SCRIPT_DIR/colors.sh"
+
+# Usage:
+#   ./create_migration db1 add_lord_subtypes_table
+DB_NAME="${1:-}"
+NAME="${2:-}"
+
+[[ -z "$DB_NAME" || -z "$NAME" ]] && {
+	cmd="$(basename -- "$0")"
+	warn "Usage: %s <database name> <migration name>" "$cmd"
+	exit 2
+}
+
+ROOT_DIR="$(cd "${PWD}/migrations" && pwd)" || exit 1
+SOURCE_DIR="$ROOT_DIR/$DB_NAME"
+
+mkdir -p "$SOURCE_DIR"
+msg "Creating migration %s on database %s" "$NAME" "$DB_NAME"
+sqlx migrate add -r "$NAME" --source "$SOURCE_DIR"

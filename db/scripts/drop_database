@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load colors helper
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source "$SCRIPT_DIR/colors.sh"
+
+DB_NAME="${1:-}"
+
+[[ -z "$DB_NAME" ]] && {
+	cmd="$(basename -- "$0")"
+	warn "Usage: %s <database name>" "$cmd"
+	exit 2
+}
+
+ROOT_DIR="$(cd "${PWD}" && pwd)" || exit 1
+encoded=$(jq -rn --arg x "$ROOT_DIR" '$x|@uri|gsub("-";"%2D")')
+DB_URL="postgres://$encoded/$DB_NAME"
+
+warn "DELETING DATABASE %s" "$DB_NAME"
+sqlx database drop -y --database-url "$DB_URL"

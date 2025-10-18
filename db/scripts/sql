@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# Load colors helper
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+source "$SCRIPT_DIR/colors.sh"
+
+[ -f ".dbdata/postmaster.pid" ] || start
+DB_NAME="${1:-}"
+[[ -n "$DB_NAME" ]] || {
+	cmd="$(basename -- "$0")"
+	warn "Usage: %s <database name> [arguments]" "$cmd"
+	exit 2
+}
+msg "Starting SQL..."
+psql -h "$PWD" -d "$DB_NAME" "${@:2}"
