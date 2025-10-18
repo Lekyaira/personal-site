@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# Create data directory if it does not exist
+[ -d .dbdata ] || mkdir .dbdata
+# Start Postgres, initialize the database if it does not exist
+[ -f "$PGDATA/PG_VERSION" ] || initdb || exit 1; pg_ctl -l logfile -o "--unix_socket_directories='$PWD'" start

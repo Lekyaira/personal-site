@@ -1,0 +1,42 @@
+# Backend
+/backend/target
+/backend/.envrc
+/backend/.direnv
+/backend/.cargo
+/backend/.env
+
+# DB
+/db/.envrc
+/db/.direnv
+/db/.dbdata
+/db/logfile
+/db/.s.*
+
+# Frontend
+/frontend/.envrc
+/frontend/.direnv
+/frontend/.env*
+/frontend/node_modules
+/frontend/dist
+/frontend/dist-ssr
+/frontend/*.local
+
+# Logs
+/frontend/logs
+/frontend/*.log
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/pnpm-debug.log*
+/frontend/lerna-debug.log*
+
+# Editor directories and files
+/frontend/.vscode/*
+/frontend/!.vscode/extensions.json
+/frontend/.idea
+/frontend/.DS_Store
+/frontend/*.suo
+/frontend/*.ntvs*
+/frontend/*.njsproj
+/frontend/*.sln
+/frontend/*.sw?
