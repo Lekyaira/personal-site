@@ -9,7 +9,7 @@ use std::cmp::Ordering;
 #[sqlx(rename_all = "PascalCase")] // Must match Postgres variant case
 pub enum Roles {
     Admin,
-    User,
+    Author,
     Guest,
 }
 
@@ -27,7 +27,7 @@ impl Ord for Roles {
         fn rank(role: &Roles) -> u8 {       // Explicitly rank in case order changes
             match role {
                 Roles::Guest => 0,
-                Roles::User => 1,
+                Roles::Author => 1,
                 Roles::Admin => 2,
             }
         }

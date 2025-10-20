@@ -1,10 +1,3 @@
--- Types
-CREATE TYPE user_role AS ENUM (
-	'admin',
-	'author',
-	'reader'
-);
-
 -- Tables
 CREATE TABLE post (
 	id serial,
@@ -23,7 +16,6 @@ CREATE TABLE users (
 	id serial,
 	username text not null,
 	email text not null,
-	role user_role not null default 'reader',
 	PRIMARY KEY (id)
 );
 

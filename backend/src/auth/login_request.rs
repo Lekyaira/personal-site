@@ -5,7 +5,7 @@ use serde::Deserialize;
 /// Represents a log in request
 #[derive(JsonSchema, Deserialize)]
 pub struct LoginRequest {
-    pub username: String,
+    pub email: String,
     pub password: String,
     pub stay_logged_in: bool,
 }

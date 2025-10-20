@@ -2,7 +2,7 @@ use super::auth_user::AuthUser;
 use super::login_request::LoginRequest;
 use super::password::hash_password;
 use super::roles::Roles;
-use crate::db::UserDB;
+use crate::db::BlogDB;
 use rocket::{http::Status, serde::json::Json};
 use rocket_db_pools::{Connection, sqlx::Row};
 
@@ -10,13 +10,13 @@ use rocket_db_pools::{Connection, sqlx::Row};
 /// # Arguments
 /// - `user`: `auth::AuthUser` - Rocket guard
 /// - `access_level`: `auth::Roles` - Role to match against
-/// - `mut db`: `Connection<UserDB>` - Rocket Sqlx_pools DB
+/// - `mut db`: `Connection<BlogDB>` - Rocket Sqlx_pools DB
 /// # Returns
 /// - `Result<(), Status>`
 pub async fn authorize_role(
     user: AuthUser,
     access_level: Roles,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<(), Status> {
     let row = sqlx::query("SELECT * FROM users WHERE id = $1")
         .bind(&user.0)
@@ -32,18 +32,18 @@ pub async fn authorize_role(
 
 pub(super) async fn create_user(
     req: Json<LoginRequest>,
-    db: &mut Connection<UserDB>,
+    db: &mut Connection<BlogDB>,
 ) -> Result<i32, Status> {
     // Hash the password before adding it to the database
     let password = hash_password(&req.password);
 
     // Insert the user into the database
     let row = sqlx::query(
-        "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id",
+        "INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id",
     )
-    .bind(&req.username)
+    .bind(&req.email)
     .bind(password)
-    .bind(Roles::User)
+    .bind(Roles::Guest)
     .fetch_one(db.as_mut())
     .await
     .map_err(|_| Status::InternalServerError)?; // TODO: Parse errors, tell client if user

@@ -6,7 +6,7 @@ use super::roles::Roles;
 use super::token::{create_jwt, get_claims};
 use super::user::User;
 use super::cookie::{Expires, get_user_claims};
-use crate::db::UserDB;
+use crate::db::BlogDB;
 use rocket::{
     http::{Cookie, CookieJar, SameSite, Status},
     serde::json::Json,
@@ -44,18 +44,17 @@ fn map_db_err(e: sqlx::Error) -> Status {
 pub async fn login(
     req: Json<LoginRequest>,
     jar: &CookieJar<'_>,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<Json<User>, Status> {
-    let row = sqlx::query("SELECT username, id, password, fullname, callby FROM users WHERE username = $1")
-        .bind(&req.username)
+    let row = sqlx::query("SELECT email, id, password, username FROM users WHERE email = $1")
+        .bind(&req.email)
         .fetch_one(&mut **db)
         .await
         .map_err(map_db_err)?;
 
     let user = User {
+        email: row.get("email"),
         username: row.get("username"),
-        fullname: row.get("fullname"),
-        callby: row.get("callby"),
     };
     let id = row.get("id");
     let password_hash = row.get("password");
@@ -92,7 +91,7 @@ pub async fn logout(jar: &CookieJar<'_>) -> Result<Json<String>, Status> {
 /// Adds a new user to the database
 #[openapi]
 #[post("/signup", data = "<req>")]
-pub async fn signup(req: Json<LoginRequest>, mut db: Connection<UserDB>) -> Result<(), Status> {
+pub async fn signup(req: Json<LoginRequest>, mut db: Connection<BlogDB>) -> Result<(), Status> {
     let _ = create_user(req, &mut db).await?;
     Ok(())
 }
@@ -104,7 +103,7 @@ pub async fn signup(req: Json<LoginRequest>, mut db: Connection<UserDB>) -> Resu
 #[cfg(debug_assertions)]
 pub async fn create_admin(
     req: Json<LoginRequest>,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<(), Status> {
     // Create a new user
     let id = create_user(req, &mut db).await?;
@@ -126,22 +125,21 @@ pub async fn create_admin(
 #[get("/me")]
 pub async fn me(
     jar: &CookieJar<'_>,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<Json<User>, Status> {
     // Get the user token from the cookie, if it exists
     let (claims, expires) = get_user_claims(&jar)?;
 
     // Get the user data
-    let row = sqlx::query("SELECT username, fullname, callby FROM users WHERE id = $1")
+    let row = sqlx::query("SELECT email, username FROM users WHERE id = $1")
         .bind(claims.sub)
         .fetch_one(&mut **db)
         .await
         .map_err(map_db_err)?;
 
     let userData = User {
+        email: row.get("email"),
         username: row.get("username"),
-        fullname: row.get("fullname"),
-        callby: row.get("callby"),
     };
 
     // Regenerate the token
@@ -168,7 +166,7 @@ pub async fn me(
 #[get("/links")]
 pub async fn links(
     jar: &CookieJar<'_>,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<Json<Vec<super::link::Link>>, Status> {
     use super::link::Link;
 
@@ -199,7 +197,7 @@ pub async fn links(
 #[get("/admin")]
 pub async fn admin(
     user: AuthUser,
-    mut db: Connection<UserDB>,
+    mut db: Connection<BlogDB>,
 ) -> Result<Json<bool>, Status> {
     let is_admin: bool = sqlx::query_scalar::<Postgres, bool>("SELECT is_admin($1)")
         .bind(user.0)

@@ -4,7 +4,6 @@ use serde::Serialize;
 /// Represents user
 #[derive(Serialize, JsonSchema)]
 pub(super) struct User {
+    pub email: String,
     pub username: String,
-    pub callby: Option<String>,
-    pub fullname: Option<String>,
 }
