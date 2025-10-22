@@ -1,12 +1,13 @@
 -- Tables
 CREATE TABLE post (
 	id serial,
+	slug text not null,
 	title text not null,
 	body text not null,
-	category text not null,
+	category text not null default 'general',
 	published boolean not null default false,
 	queued boolean not null default false,
-	upload_date timestamp without time zone not null,
+	upload_date timestamp without time zone not null default NOW(),
 	publish_date timestamp without time zone,
 	num_reads integer not null default 0,
 	PRIMARY KEY (id)

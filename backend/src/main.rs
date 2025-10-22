@@ -21,6 +21,7 @@ use auth::AuthUser;
 mod db;
 use db::{BlogDB};
 mod routes;
+mod blog;
 
 fn ui() -> SwaggerUIConfig {
     SwaggerUIConfig {
@@ -32,7 +33,6 @@ fn ui() -> SwaggerUIConfig {
 #[launch]
 fn rocket() -> _ {
     // Insert database url into Rocket
-    // TODO: Pull the rest of the Rocket config values from server config
     let rocket_config = rocket::Config::figment()
         .merge((
             "databases.blog",

@@ -1,4 +1,5 @@
 use crate::auth;
+use crate::blog;
 use rocket::{get, serde::json::Json};
 use rocket_okapi::{
     okapi::{schemars, schemars::JsonSchema},
@@ -8,7 +9,6 @@ use rocket_okapi::{
 
 pub fn get_routes() -> Vec<rocket::Route> {
     openapi_get_routes![
-        test_admin,
         auth::login,
         auth::logout,
         auth::signup,
@@ -16,6 +16,7 @@ pub fn get_routes() -> Vec<rocket::Route> {
         auth::me,
         auth::links,
         auth::admin,
+        blog::upload,
     ]
 }
 
